@@ -5,17 +5,45 @@
     <title>Talkrunde Display</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #2d2a26; font-family: sans-serif; }
-        .thumb {
-            position: absolute; bottom: -150px; font-size: 100px;
-            color: #154734; user-select: none; pointer-events: none;
-            animation: floatUp 3.5s ease-in forwards; z-index: 100;
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #2d2a26; 
+            font-family: 'Arial Black', sans-serif; 
         }
+
+        /* Die Headline im Hintergrund */
+        #headline {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10vw; /* Passt sich der Bildschirmbreite an */
+            color: rgba(21, 71, 52, 0.3); /* Euer Forstgrün, aber leicht transparent */
+            white-space: nowrap;
+            user-select: none;
+            z-index: 1; /* Ganz hinten */
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        .thumb {
+            position: absolute;
+            bottom: -150px;
+            font-size: 100px;
+            color: #154734; 
+            user-select: none;
+            pointer-events: none;
+            z-index: 100; /* Vor der Headline */
+            animation: floatUp 3.5s ease-in forwards;
+        }
+
         @keyframes floatUp {
             0% { transform: translateY(0) rotate(0deg); opacity: 0; }
             10% { opacity: 1; }
             100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
         }
+
         #status-bar {
             position: fixed; top: 15px; left: 15px; padding: 10px;
             color: white; background: rgba(0,0,0,0.7); border-radius: 5px; z-index: 1000;
@@ -23,45 +51,33 @@
     </style>
 </head>
 <body>
+    <div id="headline">Talkrunde</div>
+    
     <div id="status-bar">Warte auf Skript...</div>
 
     <script>
-        // Sicherstellen, dass das Skript geladen ist, bevor wir starten
         window.onload = function() {
             const statusEl = document.getElementById('status-bar');
-            
-            if (typeof window.supabase === 'undefined') {
-                statusEl.innerText = "Fehler: Supabase-Bibliothek konnte nicht geladen werden.";
-                statusEl.style.background = "red";
-                return;
-            }
-
             const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
             const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
             
             try {
                 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                
                 const channel = supabaseClient.channel('talkrunde', {
                     config: { broadcast: { self: true } }
                 })
-                .on('broadcast', { event: 'reaction' }, (payload) => {
+                .on('broadcast', { event: 'reaction' }, () => {
                     spawnThumb();
                 })
                 .subscribe((status) => {
                     statusEl.innerText = "Status: " + status;
                     if (status === 'SUBSCRIBED') {
                         statusEl.style.color = "#91ae2d";
-                        // Selbst-Test nach 1 Sekunde
-                        setTimeout(() => {
-                            channel.send({ type: 'broadcast', event: 'reaction', payload: {} });
-                        }, 1000);
-                        // Ausblenden nach 5 Sekunden
-                        setTimeout(() => { statusEl.style.opacity = '0'; }, 5000);
+                        setTimeout(() => { statusEl.style.opacity = '0'; }, 3000);
                     }
                 });
             } catch (err) {
-                statusEl.innerText = "Initialisierungs-Fehler: " + err.message;
+                statusEl.innerText = "Fehler: " + err.message;
             }
         };
 

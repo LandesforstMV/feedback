@@ -3,52 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Talkrunde Vote</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
         body { 
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            height: 100vh; margin: 0; background: #2d2a26; font-family: sans-serif; color: white;
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background: #2d2a26; font-family: sans-serif;
         }
         #btn { 
-            font-size: 100px; width: 180px; height: 180px; border: none; border-radius: 50%;
-            cursor: pointer; color: #154734; 
-            background: linear-gradient(135deg, #3e822c 0%, #91ae2d 100%);
+            font-size: 100px; width: 200px; height: 200px; border: none; border-radius: 50%;
+            cursor: pointer; color: white; 
+            background: linear-gradient(135deg, #154734 0%, #3e822c 100%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: flex; justify-content: center; align-items: center;
             transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
         }
-        #btn:active { transform: scale(0.8); }
-        #msg { margin-top: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; }
+        #btn:active { transform: scale(0.9); }
+        #status { position: fixed; bottom: 20px; color: #555; font-size: 12px; }
     </style>
 </head>
 <body>
+
     <button id="btn">&#128077;</button>
-    <div id="msg">Gesendet!</div>
+    <div id="status">Verbinde...</div>
 
     <script>
         const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // Kanal mit denselben Einstellungen wie beim Display
-        const channel = supabase.channel('talkrunde').subscribe();
+        let channel;
 
-        document.getElementById('btn').onclick = () => {
-            // Signal senden
-            channel.send({
-                type: 'broadcast',
-                event: 'reaction',
-                payload: { t: Date.now() } // Kleiner Zeitstempel als Inhalt
+        window.onload = function() {
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const statusEl = document.getElementById('status');
+
+            // Kanal abonnieren (Muss exakt 'talkrunde' heißen wie im Display)
+            channel = supabaseClient.channel('talkrunde');
+            
+            channel.subscribe((status) => {
+                statusEl.innerText = "Status: " + status;
+                if (status === 'SUBSCRIBED') {
+                    statusEl.style.color = "#91ae2d";
+                }
             });
 
-            // Kurzes visuelles Feedback auf dem Handy
-            const msg = document.getElementById('msg');
-            msg.style.opacity = '1';
-            setTimeout(() => { msg.style.opacity = '0'; }, 500);
-
-            // Handy vibrieren lassen
-            if ('vibrate' in navigator) navigator.vibrate(50);
-        };
+            document.getElementById('btn').onclick = () => {
+                if (channel) {
+                    console.log("Sende Reaktion...");
+                    channel.send({
+                        type: 'broadcast',
+                        event: 'reaction',
+                        payload: { sentAt: Date.now() }
+                    });
+                    
+                    // Optional: Handy kurz vibrieren lassen
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                }
+            };
+        }
     </script>
 </body>
 </html>

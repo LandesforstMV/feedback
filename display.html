@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #2d2a26; }
+        .thumb {
+            position: absolute;
+            bottom: -150px;
+            font-size: 100px;
+            color: #154734; /* Euer Forstgrün */
+            user-select: none;
+            pointer-events: none;
+            animation: floatUp 3.5s ease-in forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
+        }
+        #status-bar {
+            position: fixed; top: 10px; left: 10px; padding: 8px;
+            color: white; font-family: sans-serif; font-size: 12px;
+            border-radius: 4px; z-index: 1000; background: rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="status-bar">Verbinde...</div>
+
+    <script>
+        const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const statusEl = document.getElementById('status-bar');
+
+        // WICHTIG: Wir nutzen hier config { broadcast: { self: true } }
+        // Das hilft oft, den Kanal zu initialisieren
+        const channel = supabase.channel('talkrunde', {
+            config: { broadcast: { self: true } }
+        })
+        .on('broadcast', { event: 'reaction' }, (payload) => {
+            console.log("Reaktion empfangen!", payload);
+            spawnThumb();
+        })
+        .subscribe((status) => {
+            statusEl.innerText = "Status: " + status;
+            if (status === 'SUBSCRIBED') {
+                statusEl.style.color = "#91ae2d"; // Frühlingsgrün wenn verbunden
+                setTimeout(() => statusEl.style.display = 'none', 3000);
+            } else {
+                statusEl.style.color = "red";
+            }
+        });
+
+        function spawnThumb() {
+            const div = document.createElement('div');
+            div.className = 'thumb';
+            div.innerHTML = '&#128077;'; 
+            div.style.left = Math.random() * 85 + 'vw';
+            div.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Reagieren</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column;
+            height: 100vh; 
+            margin: 0; 
+            /* Nutzt euer Schwarz */
+            background: #2d2a26; 
+            font-family: sans-serif;
+            color: white;
+        }
+
+        #btn { 
+            font-size: 130px; 
+            width: 200px;
+            height: 200px;
+            border: none; 
+            border-radius: 50%;
+            cursor: pointer;
+            
+            /* Daumen-Farbe auf dem Button: Euer Forstgrün */
+            color: #154734; 
+            
+            /* Button-Hintergrund: Verlauf Sommergrün -> Frühlingsgrün */
+            background: linear-gradient(135deg, #3e822c 0%, #91ae2d 100%);
+            
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transition: transform 0.1s, box-shadow 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #btn:active { 
+            transform: scale(0.9); 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+
+        p { margin-top: 30px; font-size: 1.3rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <button id="btn">&#128077;</button>
+    <p>Tippen zum Reagieren!</p>
+
+    <script>
+        const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        const channel = supabase.channel('talkrunde').subscribe();
+
+        // Haptic Feedback (Vibration) falls vom Handy unterstützt
+        const triggerFeedback = () => {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50); 
+            }
+        };
+
+        document.getElementById('btn').onclick = () => {
+            triggerFeedback();
+            channel.send({
+                type: 'broadcast',
+                event: 'reaction',
+                payload: {}
+            });
+        };
+    </script>
+</body>
+</html>

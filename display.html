@@ -2,85 +2,78 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Talkrunde Display - Live</title>
+    <title>Talkrunde Display</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            padding: 0;
-            overflow: hidden; 
-            background-color: #2d2a26; /* Euer Schwarz */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        /* Die fliegenden Daumen */
+        body { margin: 0; overflow: hidden; background-color: #2d2a26; font-family: sans-serif; }
         .thumb {
-            position: absolute;
-            bottom: -150px;
-            font-size: 100px;
-            color: #154734; /* Euer Forstgrün */
-            user-select: none;
-            pointer-events: none;
-            z-index: 100;
-            /* Animation: 3.5 Sekunden Flugzeit */
-            animation: floatUp 3.5s ease-in forwards;
-            /* Schatten für mehr Tiefe auf dunklem Grund */
-            text-shadow: 0 0 20px rgba(21, 71, 52, 0.5);
+            position: absolute; bottom: -150px; font-size: 100px;
+            color: #154734; user-select: none; pointer-events: none;
+            animation: floatUp 3.5s ease-in forwards; z-index: 100;
         }
-
         @keyframes floatUp {
-            0% { 
-                transform: translateY(0) rotate(0deg); 
-                opacity: 0; 
-            }
-            10% { 
-                opacity: 1; 
-            }
-            90% { 
-                opacity: 1; 
-            }
-            100% { 
-                transform: translateY(-130vh) rotate(var(--r)); 
-                opacity: 0; 
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
         }
-
-        /* Statusanzeige oben links für das Setup */
         #status-bar {
-            position: fixed; 
-            top: 15px; 
-            left: 15px; 
-            padding: 10px 15px;
-            color: white; 
-            font-size: 14px; 
-            border-radius: 5px; 
-            z-index: 1000; 
-            background: rgba(0,0,0,0.6);
-            transition: opacity 1s ease;
+            position: fixed; top: 15px; left: 15px; padding: 10px;
+            color: white; background: rgba(0,0,0,0.7); border-radius: 5px; z-index: 1000;
         }
     </style>
 </head>
 <body>
-
-    <div id="status-bar">Initialisiere WebSocket...</div>
+    <div id="status-bar">Warte auf Skript...</div>
 
     <script>
-        // DEINE DATEN
-        const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
-        
-        // Client erstellen
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const statusEl = document.getElementById('status-bar');
-
-        // Kanal abonnieren
-        // 'self: true' erlaubt es der Seite, eigene Test-Signale zu empfangen
-        const channel = supabase.channel('talkrunde', {
-            config: { 
-                broadcast: { self: true } 
+        // Sicherstellen, dass das Skript geladen ist, bevor wir starten
+        window.onload = function() {
+            const statusEl = document.getElementById('status-bar');
+            
+            if (typeof window.supabase === 'undefined') {
+                statusEl.innerText = "Fehler: Supabase-Bibliothek konnte nicht geladen werden.";
+                statusEl.style.background = "red";
+                return;
             }
-        })
-        .on('broadcast', { event: 'reaction' }, (payload) => {
-            console.log("Signal empfangen!", payload);
-            spawnThumb();
-        })
+
+            const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
+            
+            try {
+                const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                const channel = supabaseClient.channel('talkrunde', {
+                    config: { broadcast: { self: true } }
+                })
+                .on('broadcast', { event: 'reaction' }, (payload) => {
+                    spawnThumb();
+                })
+                .subscribe((status) => {
+                    statusEl.innerText = "Status: " + status;
+                    if (status === 'SUBSCRIBED') {
+                        statusEl.style.color = "#91ae2d";
+                        // Selbst-Test nach 1 Sekunde
+                        setTimeout(() => {
+                            channel.send({ type: 'broadcast', event: 'reaction', payload: {} });
+                        }, 1000);
+                        // Ausblenden nach 5 Sekunden
+                        setTimeout(() => { statusEl.style.opacity = '0'; }, 5000);
+                    }
+                });
+            } catch (err) {
+                statusEl.innerText = "Initialisierungs-Fehler: " + err.message;
+            }
+        };
+
+        function spawnThumb() {
+            const div = document.createElement('div');
+            div.className = 'thumb';
+            div.innerHTML = '&#128077;'; 
+            div.style.left = (Math.random() * 80 + 5) + 'vw';
+            div.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

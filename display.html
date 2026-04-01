@@ -2,53 +2,88 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Talkrunde Display</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
-        body { 
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            height: 100vh; margin: 0; background: #2d2a26; font-family: sans-serif; color: white;
+        body { margin: 0; overflow: hidden; background: #2d2a26; font-family: sans-serif; }
+        .thumb {
+            position: absolute;
+            bottom: -150px;
+            font-size: 100px;
+            color: #154734; /* Forstgrün */
+            user-select: none;
+            pointer-events: none;
+            animation: floatUp 3.5s ease-in forwards;
         }
-        #btn { 
-            font-size: 100px; width: 180px; height: 180px; border: none; border-radius: 50%;
-            cursor: pointer; color: #154734; 
-            background: linear-gradient(135deg, #3e822c 0%, #91ae2d 100%);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; justify-content: center; align-items: center;
-            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
         }
-        #btn:active { transform: scale(0.8); }
-        #msg { margin-top: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; }
+        #status-bar {
+            position: fixed; top: 10px; left: 10px; padding: 10px;
+            color: white; font-size: 14px; font-weight: bold;
+            border-radius: 4px; z-index: 1000; background: rgba(0,0,0,0.6);
+        }
     </style>
 </head>
 <body>
-    <button id="btn">&#128077;</button>
-    <div id="msg">Gesendet!</div>
+    <div id="status-bar">Warte auf Supabase...</div>
 
     <script>
         const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // Kanal mit denselben Einstellungen wie beim Display
-        const channel = supabase.channel('talkrunde').subscribe();
+        // Initialisierung prüfen
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            document.getElementById('status-bar').innerText = "Fehler: Library nicht geladen";
+        }
 
-        document.getElementById('btn').onclick = () => {
-            // Signal senden
-            channel.send({
-                type: 'broadcast',
-                event: 'reaction',
-                payload: { t: Date.now() } // Kleiner Zeitstempel als Inhalt
-            });
+        const statusEl = document.getElementById('status-bar');
 
-            // Kurzes visuelles Feedback auf dem Handy
-            const msg = document.getElementById('msg');
-            msg.style.opacity = '1';
-            setTimeout(() => { msg.style.opacity = '0'; }, 500);
+        // Wir nutzen einen etwas anderen Weg für den Channel-Aufbau
+        const channel = supabase.channel('talkrunde', {
+            config: {
+                broadcast: { self: true },
+            }
+        })
+        .on('broadcast', { event: 'reaction' }, (payload) => {
+            console.log("Empfangen:", payload);
+            spawnThumb();
+        })
+        .subscribe((status, err) => {
+            console.log("Status-Update:", status);
+            
+            if (err) {
+                statusEl.innerText = "Fehler: " + err.message;
+                statusEl.style.color = "red";
+                return;
+            }
 
-            // Handy vibrieren lassen
-            if ('vibrate' in navigator) navigator.vibrate(50);
-        };
+            statusEl.innerText = "Status: " + status;
+
+            if (status === 'SUBSCRIBED') {
+                statusEl.style.color = "#91ae2d"; // Frühlingsgrün
+                // Statusanzeige nach 4 Sekunden ausblenden
+                setTimeout(() => { statusEl.style.opacity = '0'; }, 4000);
+            } else if (status === 'CHANNEL_ERROR') {
+                statusEl.style.color = "orange";
+                statusEl.innerText = "Status: Error (Dashboard prüfen)";
+            }
+        });
+
+        function spawnThumb() {
+            const div = document.createElement('div');
+            div.className = 'thumb';
+            div.innerHTML = '&#128077;'; 
+            div.style.left = Math.random() * 85 + 'vw';
+            div.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
     </script>
 </body>
 </html>

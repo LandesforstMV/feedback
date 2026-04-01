@@ -2,88 +2,85 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Talkrunde Display</title>
+    <title>Talkrunde Display - Live</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #2d2a26; font-family: sans-serif; }
+        body { 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; 
+            background-color: #2d2a26; /* Euer Schwarz */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Die fliegenden Daumen */
         .thumb {
             position: absolute;
             bottom: -150px;
             font-size: 100px;
-            color: #154734; /* Forstgrün */
+            color: #154734; /* Euer Forstgrün */
             user-select: none;
             pointer-events: none;
+            z-index: 100;
+            /* Animation: 3.5 Sekunden Flugzeit */
             animation: floatUp 3.5s ease-in forwards;
+            /* Schatten für mehr Tiefe auf dunklem Grund */
+            text-shadow: 0 0 20px rgba(21, 71, 52, 0.5);
         }
+
         @keyframes floatUp {
-            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            10% { opacity: 1; }
-            100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
+            0% { 
+                transform: translateY(0) rotate(0deg); 
+                opacity: 0; 
+            }
+            10% { 
+                opacity: 1; 
+            }
+            90% { 
+                opacity: 1; 
+            }
+            100% { 
+                transform: translateY(-130vh) rotate(var(--r)); 
+                opacity: 0; 
+            }
         }
+
+        /* Statusanzeige oben links für das Setup */
         #status-bar {
-            position: fixed; top: 10px; left: 10px; padding: 10px;
-            color: white; font-size: 14px; font-weight: bold;
-            border-radius: 4px; z-index: 1000; background: rgba(0,0,0,0.6);
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            padding: 10px 15px;
+            color: white; 
+            font-size: 14px; 
+            border-radius: 5px; 
+            z-index: 1000; 
+            background: rgba(0,0,0,0.6);
+            transition: opacity 1s ease;
         }
     </style>
 </head>
 <body>
-    <div id="status-bar">Warte auf Supabase...</div>
+
+    <div id="status-bar">Initialisiere WebSocket...</div>
 
     <script>
+        // DEINE DATEN
         const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
         
-        // Initialisierung prüfen
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } catch (e) {
-            document.getElementById('status-bar').innerText = "Fehler: Library nicht geladen";
-        }
-
+        // Client erstellen
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const statusEl = document.getElementById('status-bar');
 
-        // Wir nutzen einen etwas anderen Weg für den Channel-Aufbau
+        // Kanal abonnieren
+        // 'self: true' erlaubt es der Seite, eigene Test-Signale zu empfangen
         const channel = supabase.channel('talkrunde', {
-            config: {
-                broadcast: { self: true },
+            config: { 
+                broadcast: { self: true } 
             }
         })
         .on('broadcast', { event: 'reaction' }, (payload) => {
-            console.log("Empfangen:", payload);
+            console.log("Signal empfangen!", payload);
             spawnThumb();
         })
-        .subscribe((status, err) => {
-            console.log("Status-Update:", status);
-            
-            if (err) {
-                statusEl.innerText = "Fehler: " + err.message;
-                statusEl.style.color = "red";
-                return;
-            }
-
-            statusEl.innerText = "Status: " + status;
-
-            if (status === 'SUBSCRIBED') {
-                statusEl.style.color = "#91ae2d"; // Frühlingsgrün
-                // Statusanzeige nach 4 Sekunden ausblenden
-                setTimeout(() => { statusEl.style.opacity = '0'; }, 4000);
-            } else if (status === 'CHANNEL_ERROR') {
-                statusEl.style.color = "orange";
-                statusEl.innerText = "Status: Error (Dashboard prüfen)";
-            }
-        });
-
-        function spawnThumb() {
-            const div = document.createElement('div');
-            div.className = 'thumb';
-            div.innerHTML = '&#128077;'; 
-            div.style.left = Math.random() * 85 + 'vw';
-            div.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 4000);
-        }
-    </script>
-</body>
-</html>

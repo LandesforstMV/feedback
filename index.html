@@ -3,63 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>Talkrunde Vote</title>
+    <title>Talkrunde Live - CI Design</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
         body { 
-            display: flex; justify-content: center; align-items: center; 
-            height: 100vh; margin: 0; background: #2d2a26; font-family: sans-serif;
+            margin: 0; overflow: hidden; 
+            background-color: #154734; /* Euer dunkles CI-Grün */
+            font-family: 'Arial Black', sans-serif; color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh;
         }
-        #btn { 
-            font-size: 100px; width: 200px; height: 200px; border: none; border-radius: 50%;
-            cursor: pointer; color: white; 
-            background: linear-gradient(135deg, #154734 0%, #3e822c 100%);
+
+        /* --- GROSSER BILDSCHIRM (BEAMER) STYLES --- */
+
+        #headline-bg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 10vw; 
+            color: #3e822c; /* Euer helleres CI-Grün */
+            white-space: nowrap; user-select: none; z-index: 1; text-transform: uppercase;
+            opacity: 0.4; /* Leicht transparent für Tiefeneffekt */
+        }
+
+        #qr-area {
+            position: fixed; bottom: 25px; right: 25px;
+            background: white; padding: 12px; border-radius: 12px;
+            z-index: 500; text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; justify-content: center; align-items: center;
-            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
         }
-        #btn:active { transform: scale(0.9); }
-        #status { position: fixed; bottom: 20px; color: #555; font-size: 12px; }
+        #qr-area img { width: 140px; height: 140px; display: block; }
+        #qr-area span { color: #154734; font-size: 12px; font-family: sans-serif; font-weight: bold; margin-top: 5px; display: block; }
+
+        #controls, #headline-mobile { display: none; }
+
+        /* --- SMARTPHONE STYLES --- */
+
+        @media (max-width: 800px) {
+            #headline-bg, #qr-area { display: none; }
+
+            #headline-mobile { 
+                display: block; 
+                position: absolute; top: 8vh; 
+                font-size: 22px; color: #91ae2d; /* Frühlingsgrün für Kontrast */
+                text-transform: uppercase; letter-spacing: 2px;
+                z-index: 1000;
+            }
+
+            #controls { 
+                display: grid; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 25px;
+                position: fixed; bottom: 12vh;
+                width: 80%; max-width: 300px;
+                z-index: 1000;
+            }
+
+            .action-btn {
+                width: 100%; height: 0; padding-bottom: 100%; 
+                border-radius: 50%; border: 3px solid #3e822c; /* Rand in CI-Grün */
+                font-size: 50px; cursor: pointer; color: white;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+                transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+                position: relative;
+                background: #2d2a26; /* Dunkler Button-Hintergrund */
+            }
+            
+            .action-btn span {
+                position: absolute; top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            .action-btn:active { transform: scale(0.9); background: #3e822c; }
+        }
+
+        /* --- FLUG-STYLES --- */
+        .floating-emoji {
+            position: absolute; bottom: -150px; font-size: 100px;
+            user-select: none; pointer-events: none; z-index: 100;
+            animation: floatUp 3.5s ease-in forwards;
+            /* Leichter Schein um die Emojis für bessere Sichtbarkeit auf Dunkelgrün */
+            text-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <button id="btn">&#128077;</button>
-    <div id="status">Verbinde...</div>
+    <div id="headline-bg">Talkrunde</div>
+    <div id="headline-mobile">JETZT REAGIEREN</div>
+
+    <div id="qr-area">
+        <img id="qr-image" src="" alt="QR Code">
+        <span>SCAN & REAGIERE</span>
+    </div>
+
+    <div id="controls">
+        <button class="action-btn" onclick="send('👍')"><span>👍</span></button>
+        <button class="action-btn" onclick="send('❤️')"><span>❤️</span></button>
+        <button class="action-btn" onclick="send('🌳')"><span>🌳</span></button>
+        <button class="action-btn" onclick="send('😂')"><span>😂</span></button>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let channel;
+        const channel = supabase.channel('talkrunde', { config: { broadcast: { self: true } } });
 
-        window.onload = function() {
-            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            const statusEl = document.getElementById('status');
+        const currentUrl = window.location.href;
+        document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}`;
 
-            // Kanal abonnieren (Muss exakt 'talkrunde' heißen wie im Display)
-            channel = supabaseClient.channel('talkrunde');
-            
-            channel.subscribe((status) => {
-                statusEl.innerText = "Status: " + status;
-                if (status === 'SUBSCRIBED') {
-                    statusEl.style.color = "#91ae2d";
-                }
+        channel.on('broadcast', { event: 'reaction' }, (payload) => {
+            spawnEmoji(payload.payload.symbol);
+        }).subscribe();
+
+        function send(symbol) {
+            channel.send({
+                type: 'broadcast',
+                event: 'reaction',
+                payload: { symbol: symbol }
             });
+            if ('vibrate' in navigator) navigator.vibrate(50);
+        }
 
-            document.getElementById('btn').onclick = () => {
-                if (channel) {
-                    console.log("Sende Reaktion...");
-                    channel.send({
-                        type: 'broadcast',
-                        event: 'reaction',
-                        payload: { sentAt: Date.now() }
-                    });
-                    
-                    // Optional: Handy kurz vibrieren lassen
-                    if ('vibrate' in navigator) navigator.vibrate(50);
-                }
-            };
+        function spawnEmoji(symbol) {
+            const div = document.createElement('div');
+            div.className = 'floating-emoji';
+            div.innerHTML = symbol; 
+            div.style.left = (Math.random() * 85 + 5) + 'vw';
+            div.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
         }
     </script>
 </body>

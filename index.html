@@ -3,25 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <title>Talkrunde Live - Interaktiv</title>
+    <title>Talkrunde Live</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.40.0/dist/umd/supabase.js"></script>
     <style>
         body { 
             margin: 0; overflow: hidden; 
-            background-color: #154734; /* CI-Dunkelgrün */
+            background-color: #154734; 
             font-family: 'Arial Black', sans-serif; color: white;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100vh;
         }
 
-        /* --- GROSSER BILDSCHIRM (BEAMER) STYLES --- */
-
         #headline-bg {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 10vw; 
-            color: #3e822c; /* CI-Hellgrün */
-            white-space: nowrap; user-select: none; z-index: 1; text-transform: uppercase;
-            opacity: 0.4;
+            font-size: 10vw; color: #3e822c; white-space: nowrap; user-select: none; z-index: 1; text-transform: uppercase; opacity: 0.4;
         }
 
         #qr-area {
@@ -32,75 +27,27 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* Kleine Emojis als Anleitung über dem QR-Code */
-        .qr-icons {
-            display: flex; gap: 10px; margin-bottom: 8px; font-size: 34px !important;
-        }
-
-        #qr-area img { width: 140px; height: 140px; display: block; }
+        .qr-icons { display: flex; gap: 12px; margin-bottom: 10px; }
         
-        #qr-area span { 
-            color: #154734; font-size: 14px; font-family: sans-serif; 
-            font-weight: bold; margin-top: 8px; display: block;
-            letter-spacing: 0.5px;
-        }
+        /* HIER IST DIE WICHTIGE ÄNDERUNG */
+        .qr-icons span { font-size: 45px; line-height: 1; }
+
+        #qr-area img { width: 160px; height: 160px; display: block; }
+        #qr-area span#qr-text { color: #154734; font-size: 14px; font-family: sans-serif; font-weight: bold; margin-top: 8px; display: block; }
 
         #controls, #headline-mobile { display: none; }
 
-
-        /* --- SMARTPHONE (STEUERUNG) STYLES --- */
-
         @media (max-width: 800px) {
             #headline-bg, #qr-area { display: none; }
-
-            #headline-mobile { 
-                display: block; 
-                position: absolute; top: 8vh; 
-                font-size: 22px; color: #91ae2d; 
-                text-transform: uppercase; letter-spacing: 2px;
-                z-index: 1000;
-            }
-
-            #controls { 
-                display: grid; 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 25px;
-                position: fixed; bottom: 12vh;
-                width: 80%; max-width: 300px;
-                z-index: 1000;
-            }
-
-            .action-btn {
-                width: 100%; height: 0; padding-bottom: 100%; 
-                border-radius: 50%; border: 3px solid #3e822c;
-                font-size: 50px; cursor: pointer; color: white;
-                box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-                transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
-                position: relative;
-                background: #2d2a26;
-            }
-            
-            .action-btn span {
-                position: absolute; top: 50%; left: 50%;
-                transform: translate(-50%, -50%);
-            }
+            #headline-mobile { display: block; position: absolute; top: 8vh; font-size: 22px; color: #91ae2d; text-transform: uppercase; letter-spacing: 2px; z-index: 1000; }
+            #controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; position: fixed; bottom: 12vh; width: 80%; max-width: 300px; z-index: 1000; }
+            .action-btn { width: 100%; height: 0; padding-bottom: 100%; border-radius: 50%; border: 3px solid #3e822c; font-size: 50px; cursor: pointer; color: white; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: transform 0.1s; position: relative; background: #2d2a26; }
+            .action-btn span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
             .action-btn:active { transform: scale(0.9); background: #3e822c; }
         }
 
-        /* --- EFFEKTE --- */
-
-        .floating-emoji {
-            position: absolute; bottom: -150px; font-size: 100px;
-            user-select: none; pointer-events: none; z-index: 100;
-            animation: floatUp 3.5s ease-in forwards;
-            text-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            10% { opacity: 1; }
-            100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; }
-        }
+        .floating-emoji { position: absolute; bottom: -200px; font-size: 150px; user-select: none; pointer-events: none; z-index: 100; animation: floatUp 3.5s ease-in forwards; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        @keyframes floatUp { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-130vh) rotate(var(--r)); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -112,7 +59,7 @@
             <span>👍</span><span>❤️</span><span>🌳</span><span>😂</span>
         </div>
         <img id="qr-image" src="" alt="QR Code">
-        <span>SCAN & REAGIERE</span>
+        <span id="qr-text">SCAN & REAGIERE</span>
     </div>
 
     <div id="headline-mobile">JETZT REAGIEREN</div>
@@ -125,45 +72,26 @@
     </div>
 
     <script>
-        // Konfiguration
         const SUPABASE_URL = 'https://qhboerfgoirokpjisxlb.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_UVAm83tWxwsEhiYQUaMRSg_hFU0wEj6';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        // Kanal-Initialisierung
         const channel = supabase.channel('talkrunde', { config: { broadcast: { self: true } } });
+        document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}`;
 
-        // QR-Code Generierung basierend auf der aktuellen URL
-        const currentUrl = window.location.href;
-        document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}`;
+        channel.on('broadcast', { event: 'reaction' }, (payload) => { spawnEmoji(payload.payload.symbol); }).subscribe();
 
-        // Event-Hörer für eingehende Reaktionen
-        channel.on('broadcast', { event: 'reaction' }, (payload) => {
-            spawnEmoji(payload.payload.symbol);
-        }).subscribe();
-
-        // Funktion zum Senden einer Reaktion
         function send(symbol) {
-            channel.send({
-                type: 'broadcast',
-                event: 'reaction',
-                payload: { symbol: symbol }
-            });
-            // Haptisches Feedback (Vibration) falls unterstützt
+            channel.send({ type: 'broadcast', event: 'reaction', payload: { symbol: symbol } });
             if ('vibrate' in navigator) navigator.vibrate(50);
         }
 
-        // Funktion zum Erzeugen der fliegenden Elemente
         function spawnEmoji(symbol) {
             const div = document.createElement('div');
             div.className = 'floating-emoji';
             div.innerHTML = symbol; 
-            // Zufällige horizontale Position und Rotation
-            div.style.left = (Math.random() * 85 + 5) + 'vw';
+            div.style.left = (Math.random() * 80 + 10) + 'vw';
             div.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
             document.body.appendChild(div);
-            
-            // Element nach Ende der Animation entfernen
             setTimeout(() => div.remove(), 4000);
         }
     </script>

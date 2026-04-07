@@ -1,22 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        .emoji-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            flex-direction: column;
+        }
+        .emoji {
+            margin: 5px;
+            text-align: center;
+        }
+        .qr-code {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div id="qr-area">
-        <img src="path/to/qr-code.png" alt="QR Code">
-        <div class="emoji-row">
-            <span>😀</span>
-            <span>😄</span>
-            <span>😅</span>
-            <span>😊</span>
-            <span>😍</span>
+    <div class="qr-code">
+        <img src="path/to/qr-code.png" alt="QR Code" /> 
+    </div>
+    <div class="emoji-container">
+        <div class="emoji">
+            <img src="path/to/smiley.png" alt="Smiley Emoji" />
+            <p>Smiley</p>
+        </div>
+        <div class="emoji">
+            <img src="path/to/thumbs-up.png" alt="Thumbs Up Emoji" />
+            <p>Thumbs Up</p>
+        </div>
+        <div class="emoji">
+            <img src="path/to/heart.png" alt="Heart Emoji" />
+            <p>Heart</p>
         </div>
     </div>
-    <script src="script.js"></script>
 </body>
 </html>
